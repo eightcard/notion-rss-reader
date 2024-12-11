@@ -1,19 +1,19 @@
-import { Client } from '@notionhq/client'
+import { Client } from "https://deno.land/x/notion_sdk/src/mod.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TODO = any
+type TODO = any;
 
 export const addFeedItems = async (
   newFeedItems: {
-    [key: string]: TODO
-  }[]
+    [key: string]: TODO;
+  }[],
 ) => {
-  const notion = new Client({ auth: process.env.NOTION_KEY })
-  const databaseId = process.env.NOTION_READER_DATABASE_ID || ''
+  const notion = new Client({ auth: Deno.env.get("NOTION_KEY") });
+  const databaseId = Deno.env.get("NOTION_READER_DATABASE_ID") || "";
 
   for (const item of newFeedItems) {
-    const { title, link, pubDate } = item
-    const domain = link?.match(/^https?:\/{2,}(.*?)(?:\/|\?|#|$)/)
+    const { title, link, pubDate } = item;
+    const domain = link?.match(/^https?:\/{2,}(.*?)(?:\/|\?|#|$)/);
 
     const properties: TODO = {
       Title: {
@@ -33,7 +33,7 @@ export const addFeedItems = async (
           name: domain ? domain[1] : null,
         },
       },
-      'Created At': {
+      "Created At": {
         rich_text: [
           {
             text: {
@@ -42,25 +42,25 @@ export const addFeedItems = async (
           },
         ],
       },
-    }
+    };
 
-    console.log(title)
-    const retries = 4
-    const delay = 1000
+    console.log(title);
+    const retries = 4;
+    const delay = 1000;
     for (let i = 0; i <= retries; i++) {
       try {
         await notion.pages.create({
           parent: { database_id: databaseId },
           properties,
-        })
-        break
+        });
+        break;
       } catch (error) {
         if (i < retries) {
-          await new Promise((resolve) => setTimeout(resolve, delay))
+          await new Promise((resolve) => setTimeout(resolve, delay));
         } else {
-          console.error(error)
+          console.error(error);
         }
       }
     }
   }
-}
+};
