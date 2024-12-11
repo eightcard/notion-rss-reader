@@ -1,6 +1,4 @@
 import { Client } from '@notionhq/client'
-import { CreatePageParameters } from '@notionhq/client/build/src/api-endpoints'
-import ogp from 'ogp-parser'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TODO = any
@@ -13,8 +11,8 @@ export const addFeedItems = async (
   const notion = new Client({ auth: process.env.NOTION_KEY })
   const databaseId = process.env.NOTION_READER_DATABASE_ID || ''
 
-  newFeedItems.forEach(async (item) => {
-    const { title, link, enclosure, pubDate } = item
+  for (const item of newFeedItems) {
+    const { title, link, pubDate } = item
     const domain = link?.match(/^https?:\/{2,}(.*?)(?:\/|\?|#|$)/)
 
     const properties: TODO = {
@@ -46,47 +44,23 @@ export const addFeedItems = async (
       },
     }
 
-    const ogpImage = link
-      ? await ogp(link).then((data) => {
-          const imageList = data.ogp['og:image']
-          return imageList ? imageList[0] : null
+    console.log(title)
+    const retries = 4
+    const delay = 1000
+    for (let i = 0; i <= retries; i++) {
+      try {
+        await notion.pages.create({
+          parent: { database_id: databaseId },
+          properties,
         })
-      : ''
-
-    const children: CreatePageParameters['children'] = enclosure
-      ? [
-          {
-            type: 'image',
-            image: {
-              type: 'external',
-              external: {
-                url: enclosure?.url,
-              },
-            },
-          },
-        ]
-      : ogpImage
-      ? [
-          {
-            type: 'image',
-            image: {
-              type: 'external',
-              external: {
-                url: ogpImage,
-              },
-            },
-          },
-        ]
-      : []
-
-    try {
-      await notion.pages.create({
-        parent: { database_id: databaseId },
-        properties,
-        children,
-      })
-    } catch (error) {
-      console.error(error)
+        break
+      } catch (error) {
+        if (i < retries) {
+          await new Promise((resolve) => setTimeout(resolve, delay))
+        } else {
+          console.error(error)
+        }
+      }
     }
-  })
+  }
 }

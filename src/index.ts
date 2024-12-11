@@ -6,7 +6,7 @@ dotenv.config()
 
 async function index() {
   const feedUrlList = await getFeedUrlList()
-  feedUrlList.forEach(async (feedUrl: string) => {
+  for (const feedUrl of feedUrlList) {
     if (feedUrl) {
       try {
         const newFeedItems = await getNewFeedItems(feedUrl)
@@ -16,7 +16,7 @@ async function index() {
         console.error(error)
       }
     }
-  })
+  }
 }
 
 index()
