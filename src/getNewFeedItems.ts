@@ -1,18 +1,16 @@
-import Parser from "npm:rss-parser@3.13.0";
+import { parseFeed } from "https://deno.land/x/rss@1.1.1/mod.ts";
 import { timeDifference } from "./helpers.ts";
 
-const parser = new Parser();
-
 export const getNewFeedItems = async (feedUrl: string) => {
-  const { items: newFeedItems } = await parser.parseURL(feedUrl);
+  const response = await fetch(feedUrl);
+  const xml = await response.text();
+  const { entries } = await parseFeed(xml);
 
-  return newFeedItems.filter((feedItem) => {
-    const { pubDate } = feedItem;
-
+  return entries.filter((item) => {
+    const pubDate = item.updated
     if (!pubDate) return false;
 
-    const publishedDate = new Date(pubDate).getTime() / 1000;
-    const { diffInHours } = timeDifference(publishedDate);
+    const { diffInHours } = timeDifference(pubDate);
     return diffInHours === 0;
   });
 };

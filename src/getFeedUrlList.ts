@@ -1,7 +1,4 @@
-import { Client } from "https://deno.land/x/notion_sdk/src/mod.ts";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TODO = any;
+import { Client, isFullPage } from "https://deno.land/x/notion_sdk/src/mod.ts";
 
 export const getFeedUrlList = async () => {
   const notion = new Client({ auth: Deno.env.get("NOTION_KEY") });
@@ -11,11 +8,9 @@ export const getFeedUrlList = async () => {
     database_id: databaseId,
   });
 
-  const feedUrlList = response.results.filter(
-    (result: TODO) => result.properties.Enable.checkbox,
-  );
-
-  return feedUrlList.map((result: TODO) =>
-    result.properties.Link.url as string
-  );
+  return response.results.flatMap((result) => {
+    if (!isFullPage(result)) return [];
+    if (result.properties.Link.type !== 'url') throw new Error('Link property is not a URL');
+    return result.properties.Link.url || [];
+  });
 };

@@ -1,50 +1,49 @@
-import { Client } from "https://deno.land/x/notion_sdk/src/mod.ts";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TODO = any;
+import { Client } from "https://deno.land/x/notion_sdk@v2.2.3/src/mod.ts";
+import { FeedEntry } from "https://deno.land/x/rss@1.1.1/mod.ts";
 
 export const addFeedItems = async (
-  newFeedItems: {
-    [key: string]: TODO;
-  }[],
+  feedEntries: FeedEntry[],
 ) => {
   const notion = new Client({ auth: Deno.env.get("NOTION_KEY") });
   const databaseId = Deno.env.get("NOTION_READER_DATABASE_ID") || "";
 
-  for (const item of newFeedItems) {
-    const { title, link, pubDate } = item;
-    const domain = link?.match(/^https?:\/{2,}(.*?)(?:\/|\?|#|$)/);
+  for (const item of feedEntries) {
+    const { title, links, updated } = item;
 
-    const properties: TODO = {
-      Title: {
+    if (!title || title.value === undefined || !links || links.length == 0 || links[0].href === undefined || updated === undefined) {
+      console.warn(`Skipping item with missing required fields: ${JSON.stringify(item, null, 2)}`);
+      continue
+    }
+
+    const properties= {
+      "Title": {
+        type: "title" as const,
         title: [
           {
+            type: "text" as const,
             text: {
-              content: title,
+              content: title.value,
             },
           },
         ],
       },
-      URL: {
-        url: link,
+      "URL": {
+        url: links[0].href,
       },
-      Domain: {
-        select: {
-          name: domain ? domain[1] : null,
-        },
-      },
-      "Created At": {
+      "CreatedAt": {
+        type: 'rich_text' as const,
         rich_text: [
           {
+            type: 'text' as const,
             text: {
-              content: pubDate,
+              content: updated.toISOString(),
             },
           },
         ],
       },
     };
 
-    console.log(title);
+    console.log(title.value);
     const retries = 4;
     const delay = 1000;
     for (let i = 0; i <= retries; i++) {

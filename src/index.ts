@@ -10,7 +10,6 @@ async function index() {
         const newFeedItems = await getNewFeedItems(feedUrl);
         await addFeedItems(newFeedItems);
       } catch (error) {
-        // TODO: Provide some kind of notification to the user.
         console.error(error);
       }
     }
