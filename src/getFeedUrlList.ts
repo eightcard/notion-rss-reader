@@ -1,4 +1,4 @@
-import { Client, isFullPage } from "https://deno.land/x/notion_sdk/src/mod.ts";
+import { Client, isFullPage } from "https://deno.land/x/notion_sdk@v2.2.3/src/mod.ts";
 
 export const getFeedUrlList = async () => {
   const notion = new Client({ auth: Deno.env.get("NOTION_KEY") });
